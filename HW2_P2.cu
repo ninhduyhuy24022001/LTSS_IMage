@@ -87,12 +87,13 @@
 
             // TODO: Allocate device memory regions
             int *d_in1, *d_in2, *d_out;
-            CHECK(cudaMallocHost(&d_in1, nBytes));
-            CHECK(cudaMallocHost(&d_in2, nBytes));
-            CHECK(cudaMalloc(&d_out, nBytes))
+            CHECK(cudaMalloc(&d_in1, nBytes));
+            CHECK(cudaMalloc(&d_in2, nBytes));
+            CHECK(cudaMalloc(&d_out, nBytes));
 
             // TODO: Create "nStreams" device streams
-            cudaStream_t* streams = (cudaStream_t*)malloc(nStreams * sizeof(cudaStream_t));
+            // cudaStream_t* streams = (cudaStream_t*)malloc(nStreams * sizeof(cudaStream_t));
+            cudaStream_t streams[nStreams];
             for (int i = 0; i < nStreams; i++){
                 cudaStreamCreate(&streams[i]);
             }
@@ -109,7 +110,6 @@
             int streamSize = n/nStreams + 1;
             // int streamBytes = streamSize*sizeof(int);
             // dim3 gridSize((streamSize - 1) / blockSize.x + 1);
-
 
             cudaEventRecord(startEvent, 0);
             for (int i = 0; i < nStreams; i++){
@@ -128,6 +128,7 @@
 
                 CHECK(cudaMemcpyAsync(&d_in1[offsetIndex], &in1[offsetIndex], 
                                     offsetBytes, cudaMemcpyHostToDevice, streams[i]));
+
                 CHECK(cudaMemcpyAsync(&d_in2[offsetIndex], &in2[offsetIndex], 
                                     offsetBytes, cudaMemcpyHostToDevice, streams[i]));
                 addVecKernel<<<gridSize, blockSize, 0,  streams[i]>>>(&d_in1[offsetIndex], &d_in2[offsetIndex], offset, &d_out[offsetIndex]);
